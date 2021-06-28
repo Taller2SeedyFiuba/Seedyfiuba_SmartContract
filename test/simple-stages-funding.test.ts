@@ -1,7 +1,7 @@
 import chai from "chai";
 import { waffle } from "hardhat";
 import {
-  fixtureProjectCreatedBuilder,
+  fixtureProjectFundingBuilder,
   fixtureDeployedSeedifyuba,
   fixtureFundedProjectBuilder,
 } from "./common-fixtures";
@@ -24,7 +24,7 @@ describe("Seedifyuba - Simple funding", () => {
       let tx: ContractTransaction;
       let initialMissingAmount: BigNumber;
       before(async function () {
-        ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost)));
+        ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost)));
         const seedifyubaFunder = seedifyuba.connect(aFunder);
 
         initialMissingAmount = (await seedifyubaFunder.projects(projectId)).missingAmount;
@@ -62,7 +62,7 @@ describe("Seedifyuba - Simple funding", () => {
     describe(`WHEN a user tries to fund it without sending ethers`, function () {
       let tx: Promise<ContractTransaction>;
       before(async function () {
-        const { seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost));
+        const { seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost));
         const seedifyubaFunder = seedifyuba.connect(aFunder);
         await seedifyubaFunder.projects(projectId);
         tx = seedifyubaFunder.fund(projectId);
@@ -81,7 +81,7 @@ describe("Seedifyuba - Simple funding", () => {
       let projectOwner: SignerWithAddress;
       before(async function () {
         ({ seedifyuba, aFunder, projectId, projectOwner } = await loadFixture(
-          fixtureProjectCreatedBuilder(stagesCost),
+          fixtureProjectFundingBuilder(stagesCost),
         ));
         const seedifyubaFunder = seedifyuba.connect(aFunder);
         tx = await seedifyubaFunder.fund(projectId, { value: stagesCost[0] });
@@ -133,7 +133,7 @@ describe("Seedifyuba - Simple funding", () => {
       let projectOwner: SignerWithAddress;
       before(async function () {
         ({ seedifyuba, aFunder, projectId, projectOwner } = await loadFixture(
-          fixtureProjectCreatedBuilder(stagesCost),
+          fixtureProjectFundingBuilder(stagesCost),
         ));
         const seedifyubaFunder = seedifyuba.connect(aFunder);
 
@@ -196,8 +196,8 @@ describe("Seedifyuba - Simple funding", () => {
   describe("GIVEN a Seedifyuba is deployed", () => {
     describe(`WHEN a project that is already completed tries to be funded`, function () {
       it("THEN the tx reverts", async function () {
-        const { seedifyuba, projectReviewer, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
-        await seedifyuba.connect(projectReviewer).setCompletedStage(projectId, 0);
+        const { seedifyuba, pr1, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
+        await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
         return expect(seedifyuba.fund(projectId, { value: 100 })).to.be.revertedWith("project not in necessary state");
       });
     });

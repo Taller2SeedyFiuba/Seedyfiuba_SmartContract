@@ -1,6 +1,6 @@
 import chai from "chai";
 import { waffle } from "hardhat";
-import { fixtureProjectCreatedBuilder } from "./common-fixtures";
+import { fixtureProjectFundingBuilder } from "./common-fixtures";
 import { BigNumberish, ContractTransaction } from "ethers";
 import { Seedifyuba } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
@@ -20,7 +20,7 @@ describe("Seedifyuba - Complex funding", () => {
       let seedifyuba: Seedifyuba;
       let aFunder: SignerWithAddress;
       before(async function () {
-        ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost)));
+        ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost)));
         seedifyubaFunder = seedifyuba.connect(aFunder);
         await seedifyubaFunder.fund(projectId, { value: amountToFund });
       });
@@ -57,7 +57,7 @@ describe("Seedifyuba - Complex funding", () => {
       let seedifyuba: Seedifyuba;
       before(async function () {
         ({ seedifyuba, projectId, anotherFunder, projectOwner, aFunder } = await loadFixture(
-          fixtureProjectCreatedBuilder(stagesCost),
+          fixtureProjectFundingBuilder(stagesCost),
         ));
         const seedifyubaFunder = seedifyuba.connect(aFunder);
         await seedifyubaFunder.projects(projectId);

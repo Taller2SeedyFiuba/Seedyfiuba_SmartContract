@@ -1,7 +1,7 @@
 import chai from "chai";
 import { waffle } from "hardhat";
 import {
-  fixtureProjectCreatedBuilder,
+  fixtureProjectFundingBuilder,
   fixtureDeployedSeedifyuba,
   fixtureFundedProjectBuilder,
 } from "./common-fixtures";
@@ -25,7 +25,7 @@ describe("Seedifyuba - Withdrawing funds", () => {
         let withdrawTx: ContractTransaction;
         let initialMissingAmount: BigNumber;
         before(async function () {
-          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost)));
+          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost)));
           const seedifyubaFunder = seedifyuba.connect(aFunder);
 
           await seedifyubaFunder.fund(projectId, { value: amountToFund });
@@ -71,7 +71,7 @@ describe("Seedifyuba - Withdrawing funds", () => {
         let withdrawTx: ContractTransaction;
         let initialMissingAmount: BigNumber;
         before(async function () {
-          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost)));
+          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost)));
           const seedifyubaFunder = seedifyuba.connect(aFunder);
 
           await seedifyubaFunder.fund(projectId, { value: amountToFund });
@@ -119,7 +119,7 @@ describe("Seedifyuba - Withdrawing funds", () => {
         let withdrawTx: ContractTransaction;
         let initialMissingAmount: BigNumber;
         before(async function () {
-          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder(stagesCost)));
+          ({ seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectFundingBuilder(stagesCost)));
           const seedifyubaFunder = seedifyuba.connect(aFunder);
 
           await seedifyubaFunder.fund(projectId, { value: amountToFund });
@@ -170,7 +170,7 @@ describe("Seedifyuba - Withdrawing funds", () => {
         let withdrawTx: Promise<ContractTransaction>;
         before(async function () {
           ({ seedifyuba, aFunder, projectId, anotherFunder } = await loadFixture(
-            fixtureProjectCreatedBuilder(stagesCost),
+            fixtureProjectFundingBuilder(stagesCost),
           ));
           const seedifyubaFunder = seedifyuba.connect(aFunder);
 
@@ -203,8 +203,8 @@ describe("Seedifyuba - Withdrawing funds", () => {
   describe("GIVEN a Seedifyuba is deployed", () => {
     describe(`WHEN a user that wants to withdraw(partially) funds from project that is already completed`, function () {
       it("THEN the tx reverts", async function () {
-        const { seedifyuba, projectReviewer, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
-        await seedifyuba.connect(projectReviewer).setCompletedStage(projectId, 0);
+        const { seedifyuba, pr1, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
+        await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
         return expect(seedifyuba.withdraw(projectId, 10)).to.be.revertedWith("project not in necessary state");
       });
     });
@@ -229,8 +229,8 @@ describe("Seedifyuba - Withdrawing funds", () => {
   describe("GIVEN a Seedifyuba is deployed", () => {
     describe(`WHEN a user that wants to withdraw(completely) funds from project that is already completed`, function () {
       it("THEN the tx reverts", async function () {
-        const { seedifyuba, projectReviewer, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
-        await seedifyuba.connect(projectReviewer).setCompletedStage(projectId, 0);
+        const { seedifyuba, pr1, projectId } = await loadFixture(fixtureFundedProjectBuilder([10]));
+        await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
         return expect(seedifyuba.withdrawAllFunds(projectId)).to.be.revertedWith("project not in necessary state");
       });
     });

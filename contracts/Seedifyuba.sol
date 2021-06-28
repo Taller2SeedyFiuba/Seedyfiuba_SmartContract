@@ -20,15 +20,22 @@ contract Seedifyuba is Ownable {
         @notice Event emitted when a project is created
         @param projectId Identifier of the newly created project
         @param owner Receiver of the funds once the project is in progress
-        @param reviewer Assigned reviewer to the project
         @param totalAmountNeeded Amount of funds needed to complete the project
     */
-    event ProjectCreated(
-        uint256 indexed projectId,
-        address indexed owner,
-        address indexed reviewer,
-        uint256 totalAmountNeeded
-    );
+    event ProjectCreated(uint256 indexed projectId, address indexed owner, uint256 totalAmountNeeded);
+
+    /**
+        @notice Event emitted when a project has received all reviwers.
+        @param projectId Identifier of the funding project
+    */
+    event ProjectFunding(uint256 indexed projectId);
+
+    /**
+        @notice Event emitted when a reviwer is added to the project
+        @param projectId Identifier of the newly created project
+        @param reviewer Address of the reviwer
+    */
+    event ReviwerAdded(uint256 indexed projectId, address indexed reviewer);
 
     /**
         @notice Event emitted when a stage is completed in a project
@@ -71,13 +78,13 @@ contract Seedifyuba is Ownable {
 
     */
 
-    enum State { FUNDING, CANCELED, IN_PROGRESS, COMPLETED }
+    enum State { FUNDING, CANCELED, IN_PROGRESS, COMPLETED, ON_REVIEW }
 
     /**
         @notice Representation of a project.
         Project is the main entity that this contracts cares about
         It represents a social project where:
-        -state is the State that the project is in 
+        -state is the State that the project is in
         - stagesCost is an array that holds the cost to complete each of the stages
         - currentStage represents the stage that the project is in,
             only representative if the project is IN_PROGRESS
@@ -92,9 +99,9 @@ contract Seedifyuba is Ownable {
         State state;
         uint256[] stagesCost;
         uint256 currentStage;
-        address reviewer;
         address payable owner;
         uint256 missingAmount;
+        address[3] reviewers;
     }
 
     /**
@@ -108,7 +115,7 @@ contract Seedifyuba is Ownable {
      */
     mapping(uint256 => mapping(address => uint256)) public fundsSent;
 
-    /** 
+    /**
         @notice Id of the next project that will be created
      */
     uint256 public nextId;
@@ -118,7 +125,11 @@ contract Seedifyuba is Ownable {
         @param projectId Identifier of the project that we are dealing with
     */
     modifier onlyReviewer(uint256 projectId) {
-        require(msg.sender == projects[projectId].reviewer, "not project reviewer");
+        bool exists = false;
+        for (uint256 i = 0; i < projects[projectId].reviewers.length; i++) {
+            if (msg.sender == projects[projectId].reviewers[i]) exists = true;
+        }
+        require(exists, "not project reviewer");
         _;
     }
 
@@ -169,16 +180,13 @@ contract Seedifyuba is Ownable {
         @param projectOwner The owner of the project,
             should be an address that is able to receive payments as it will
             receive the funds of the project
-        @param reviewer Assigned reviewer of thre project,
-            should be a somehow trusted user because it will guarantee
-            that a project stage was completed
         @return Id that identifies the newly created project
     */
-    function createProject(
-        uint256[] calldata stagesCost,
-        address payable projectOwner,
-        address reviewer
-    ) external onlyOwner returns (uint256) {
+    function createProject(uint256[] calldata stagesCost, address payable projectOwner)
+        external
+        onlyOwner
+        returns (uint256)
+    {
         require(stagesCost.length > 0, "No stages");
         console.log("Number of stages %d", stagesCost.length);
         uint256 projectId = nextId++;
@@ -188,16 +196,48 @@ contract Seedifyuba is Ownable {
         for (uint256 i = 0; i < stagesCost.length; i++) totalAmountNeeded = totalAmountNeeded.add(stagesCost[i]);
         console.log("Total amount needed %d", totalAmountNeeded);
 
-        projects[projectId] = Project(State.FUNDING, stagesCost, 0, reviewer, projectOwner, totalAmountNeeded);
-        emit ProjectCreated(projectId, projectOwner, reviewer, totalAmountNeeded);
+        address[3] memory reviewers;
+        Project memory project = Project(State.ON_REVIEW, stagesCost, 0, projectOwner, totalAmountNeeded, reviewers);
+        projects[projectId] = project;
+        emit ProjectCreated(projectId, projectOwner, totalAmountNeeded);
         return projectId;
+    }
+
+    /**
+        @notice Adds a reviwer for an existing project,
+            it can be called by anyone except project owner.
+            Emits an ReviewerAdded event
+        @dev Modifies reviewers array.
+        @param projectId Id of the project
+    */
+    function addReviewer(uint256 projectId) public projectExists(projectId) projectInState(projectId, State.ON_REVIEW) {
+        Project storage project = projects[projectId];
+        require(project.owner != msg.sender, "Owner cannot review own project");
+
+        address[3] storage reviewers = project.reviewers;
+
+        uint256 i = 0;
+        for (i; i < project.reviewers.length; i++) {
+            require(project.reviewers[i] != msg.sender, "Already reviewing this project");
+            if (project.reviewers[i] != address(0x0)) continue;
+
+            project.reviewers[i] = msg.sender;
+            console.log("ADDED REVIEWER %h", msg.sender);
+
+            emit ReviwerAdded(projectId, msg.sender);
+            break;
+        }
+        if (i + 1 < reviewers.length) return;
+
+        project.state = State.FUNDING;
+        emit ProjectFunding(projectId);
     }
 
     /**
         @notice Sets a stage(and all of the previous) as completed.
         Can only be called by the reviewer and will send all
         of the funds corresponding to the past stages and the current
-        (i.e. the latest stage that wasn't completed) 
+        (i.e. the latest stage that wasn't completed)
         that were not yet sent.
         Emits a StageCompleted event of the last completed stage(i.e.
         if stage 3 was marked as completed, implying that 2, 1 and 0 were
@@ -236,7 +276,7 @@ contract Seedifyuba is Ownable {
     /**
         @notice Receives funds and assigns them to a project.
         The project should be in FUNDING, will fail otherwise.
-        This function will mark the project as IN_PROGRESS if all the 
+        This function will mark the project as IN_PROGRESS if all the
         funding required is met, this will also give the budget for the
         first stage. If the amount sent is over the necessary amount,
         the rest will be sent back to the funder
