@@ -3,7 +3,7 @@ import { waffle, ethers } from "hardhat";
 import { fixtureDeployedSeedifyuba, fixtureProjectCreatedBuilder } from "./common-fixtures";
 import { Seedifyuba } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { BigNumberish, Transaction } from "ethers";
+import { BigNumberish, Transaction, ContractTransaction } from "ethers";
 
 const { loadFixture } = waffle;
 
@@ -87,6 +87,21 @@ describe("Seedifyuba - Creation of project", () => {
         return expect(seedifyuba.createProject([], "0x0000000000000000000000000000000000000000")).to.be.revertedWith(
           "No stages",
         );
+      });
+    });
+  });
+
+  describe(`GIVEN a Seedifyiuba was created with one stage`, () => {
+    describe(`WHEN a user tries to fund it`, function () {
+      let tx: Promise<ContractTransaction>;
+      before(async function () {
+        const { seedifyuba, aFunder, projectId } = await loadFixture(fixtureProjectCreatedBuilder([10]));
+        const seedifyubaFunder = seedifyuba.connect(aFunder);
+        await seedifyubaFunder.projects(projectId);
+        tx = seedifyubaFunder.fund(projectId, { value: 1000 });
+      });
+      it(`THEN tx reverts`, async function () {
+        return expect(tx).to.be.revertedWith("project not in necessary state");
       });
     });
   });
