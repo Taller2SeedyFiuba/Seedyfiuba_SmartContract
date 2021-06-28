@@ -102,6 +102,7 @@ contract Seedifyuba is Ownable {
         address payable owner;
         uint256 missingAmount;
         address[3] reviewers;
+        mapping(uint256 => mapping(address => bool)) stagesVotes;
     }
 
     /**
@@ -196,9 +197,12 @@ contract Seedifyuba is Ownable {
         for (uint256 i = 0; i < stagesCost.length; i++) totalAmountNeeded = totalAmountNeeded.add(stagesCost[i]);
         console.log("Total amount needed %d", totalAmountNeeded);
 
-        address[3] memory reviewers;
-        Project memory project = Project(State.ON_REVIEW, stagesCost, 0, projectOwner, totalAmountNeeded, reviewers);
-        projects[projectId] = project;
+        projects[projectId].state = State.ON_REVIEW;
+        projects[projectId].stagesCost = stagesCost;
+        projects[projectId].currentStage = 0;
+        projects[projectId].owner = projectOwner;
+        projects[projectId].missingAmount = totalAmountNeeded;
+
         emit ProjectCreated(projectId, projectOwner, totalAmountNeeded);
         return projectId;
     }
@@ -263,9 +267,18 @@ contract Seedifyuba is Ownable {
         Project storage project = projects[projectId];
         require(project.currentStage <= completedStage, "previous stage");
         require(completedStage <= project.stagesCost.length - 1, "stage out of bounds");
+
+        require(project.stagesVotes[completedStage][msg.sender] != true, "User already voted");
+        project.stagesVotes[completedStage][msg.sender] = true;
+
+        for (uint256 i = 0; i < project.reviewers.length; i++) {
+            if (!project.stagesVotes[completedStage][project.reviewers[i]]) return;
+        }
+
         uint256 previousStage = project.currentStage;
         project.currentStage = completedStage + 1;
         emit StageCompleted(projectId, completedStage);
+
         _sendFunds(projectId, previousStage + 1, Math.min(completedStage + 1, project.stagesCost.length - 1));
         if (project.currentStage == project.stagesCost.length) {
             emit ProjectCompleted(projectId);

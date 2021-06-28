@@ -12,15 +12,21 @@ const { expect } = chai;
 describe(`Seedifyuba - Reviews`, function () {
   describe(`GIVEN a project with a single stage was funded`, function () {
     const stagesCost = [10];
-    describe(`WHEN the reviewer marks the only stage as completed`, function () {
+    describe(`WHEN all reviewers mark the only stage as completed`, function () {
       let seedifyuba: Seedifyuba;
       let projectOwner: SignerWithAddress;
       let pr1: SignerWithAddress;
+      let pr2: SignerWithAddress;
+      let pr3: SignerWithAddress;
       let projectId: BigNumberish;
       let tx: ContractTransaction;
       before(async function () {
-        ({ seedifyuba, projectId, pr1, projectOwner } = await loadFixture(fixtureFundedProjectBuilder(stagesCost)));
+        ({ seedifyuba, projectId, pr1, pr2, pr3, projectOwner } = await loadFixture(
+          fixtureFundedProjectBuilder(stagesCost),
+        ));
         tx = await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
+        tx = await seedifyuba.connect(pr2).setCompletedStage(projectId, 0);
+        tx = await seedifyuba.connect(pr3).setCompletedStage(projectId, 0);
       });
       it(`THEN an event that the project stage was completed is emitted`, async function () {
         return expect(tx).to.emit(seedifyuba, "StageCompleted").withArgs(projectId, 0);
@@ -46,15 +52,21 @@ describe(`Seedifyuba - Reviews`, function () {
   });
   describe(`GIVEN a project with two stages was funded`, function () {
     const stagesCost = [10, 20];
-    describe(`WHEN the reviewer marks the first stage as completed`, function () {
+    describe(`WHEN all reviewers mark the first stage as completed`, function () {
       let seedifyuba: Seedifyuba;
       let projectOwner: SignerWithAddress;
       let pr1: SignerWithAddress;
+      let pr2: SignerWithAddress;
+      let pr3: SignerWithAddress;
       let projectId: BigNumberish;
       let tx: ContractTransaction;
       before(async function () {
-        ({ seedifyuba, projectId, pr1, projectOwner } = await loadFixture(fixtureFundedProjectBuilder(stagesCost)));
+        ({ seedifyuba, projectId, pr1, pr2, pr3, projectOwner } = await loadFixture(
+          fixtureFundedProjectBuilder(stagesCost),
+        ));
         tx = await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
+        tx = await seedifyuba.connect(pr2).setCompletedStage(projectId, 0);
+        tx = await seedifyuba.connect(pr3).setCompletedStage(projectId, 0);
       });
       it(`THEN an event that the project stage was completed is emitted`, async function () {
         return expect(tx).to.emit(seedifyuba, "StageCompleted").withArgs(projectId, 0);
@@ -80,16 +92,24 @@ describe(`Seedifyuba - Reviews`, function () {
   });
   describe(`GIVEN a project with two stages was funded AND the first stage was set as completed`, function () {
     const stagesCost = [10, 20];
-    describe(`WHEN the reviewer marks the second stage as completed`, function () {
+    describe(`WHEN the reviewers mark the second stage as completed`, function () {
       let seedifyuba: Seedifyuba;
       let projectOwner: SignerWithAddress;
       let pr1: SignerWithAddress;
+      let pr2: SignerWithAddress;
+      let pr3: SignerWithAddress;
       let projectId: BigNumberish;
       let tx: ContractTransaction;
       before(async function () {
-        ({ seedifyuba, projectId, pr1, projectOwner } = await loadFixture(fixtureFundedProjectBuilder(stagesCost)));
+        ({ seedifyuba, projectId, pr1, pr2, pr3, projectOwner } = await loadFixture(
+          fixtureFundedProjectBuilder(stagesCost),
+        ));
         await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
-        tx = await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr2).setCompletedStage(projectId, 0);
+        await seedifyuba.connect(pr3).setCompletedStage(projectId, 0);
+        await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr2).setCompletedStage(projectId, 1);
+        tx = await seedifyuba.connect(pr3).setCompletedStage(projectId, 1);
       });
       it(`THEN an event that the project stage was completed is emitted`, async function () {
         return expect(tx).to.emit(seedifyuba, "StageCompleted").withArgs(projectId, 1);
@@ -119,10 +139,16 @@ describe(`Seedifyuba - Reviews`, function () {
       let seedifyuba: Seedifyuba;
       let projectOwner: SignerWithAddress;
       let pr1: SignerWithAddress;
+      let pr2: SignerWithAddress;
+      let pr3: SignerWithAddress;
       let projectId: BigNumberish;
       let tx: ContractTransaction;
       before(async function () {
-        ({ seedifyuba, projectId, pr1, projectOwner } = await loadFixture(fixtureFundedProjectBuilder(stagesCost)));
+        ({ seedifyuba, projectId, pr1, pr2, pr3, projectOwner } = await loadFixture(
+          fixtureFundedProjectBuilder(stagesCost),
+        ));
+        await seedifyuba.connect(pr3).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr2).setCompletedStage(projectId, 1);
         tx = await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
       });
       it(`THEN an event that the project stage was completed is emitted`, async function () {
@@ -153,11 +179,17 @@ describe(`Seedifyuba - Reviews`, function () {
       let seedifyuba: Seedifyuba;
       let projectOwner: SignerWithAddress;
       let pr1: SignerWithAddress;
+      let pr2: SignerWithAddress;
+      let pr3: SignerWithAddress;
       let projectId: BigNumberish;
       let tx: ContractTransaction;
       before(async function () {
-        ({ seedifyuba, projectId, pr1, projectOwner } = await loadFixture(fixtureFundedProjectBuilder(stagesCost)));
-        tx = await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
+        ({ seedifyuba, projectId, pr1, pr2, pr3, projectOwner } = await loadFixture(
+          fixtureFundedProjectBuilder(stagesCost),
+        ));
+        await seedifyuba.connect(pr3).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
+        tx = await seedifyuba.connect(pr2).setCompletedStage(projectId, 1);
       });
       it(`THEN an event that the project stage was completed is emitted`, async function () {
         return expect(tx).to.emit(seedifyuba, "StageCompleted").withArgs(projectId, 1);
@@ -205,8 +237,10 @@ describe(`Seedifyuba - Reviews`, function () {
     const stagesCost = [10, 20, 30];
     describe(`WHEN the reviewer tries to set a stage as completed twice`, function () {
       it(`THEN th tx reverts`, async function () {
-        const { seedifyuba, projectId, pr1 } = await loadFixture(fixtureFundedProjectBuilder(stagesCost));
+        const { seedifyuba, projectId, pr1, pr2, pr3 } = await loadFixture(fixtureFundedProjectBuilder(stagesCost));
         await seedifyuba.connect(pr1).setCompletedStage(projectId, 0);
+        await seedifyuba.connect(pr2).setCompletedStage(projectId, 0);
+        await seedifyuba.connect(pr3).setCompletedStage(projectId, 0);
         return expect(seedifyuba.connect(pr1).setCompletedStage(projectId, 0)).to.be.revertedWith("previous stage");
       });
     });
@@ -215,8 +249,10 @@ describe(`Seedifyuba - Reviews`, function () {
     const stagesCost = [10, 20, 30];
     describe(`WHEN the reviewer tries to set a stage that has already passed`, function () {
       it(`THEN th tx reverts`, async function () {
-        const { seedifyuba, projectId, pr1 } = await loadFixture(fixtureFundedProjectBuilder(stagesCost));
+        const { seedifyuba, projectId, pr1, pr2, pr3 } = await loadFixture(fixtureFundedProjectBuilder(stagesCost));
         await seedifyuba.connect(pr1).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr2).setCompletedStage(projectId, 1);
+        await seedifyuba.connect(pr3).setCompletedStage(projectId, 1);
         return expect(seedifyuba.connect(pr1).setCompletedStage(projectId, 0)).to.be.revertedWith("previous stage");
       });
     });
