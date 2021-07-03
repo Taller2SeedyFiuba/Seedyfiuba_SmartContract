@@ -9,7 +9,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const deployResult = await deploy("Seedifyuba", {
     from: deployer,
-    gasLimit: 4000000,
+    gasLimit: 5000000,
     args: [],
   });
   console.log(`Seedifyuba deployed at ${deployResult.address}`);
