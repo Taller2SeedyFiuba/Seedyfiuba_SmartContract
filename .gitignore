@@ -12,10 +12,10 @@ node_modules/
 typechain/
 profiles/
 docs/
-deployments/
 # files
 *.env
 *.log
 *.tsbuildinfo
 coverage.json
 npm-debug.log*
+.DS_Store

@@ -42,6 +42,13 @@ contract Seedifyuba is Ownable {
         @param projectId Identifier of the project that progressed
         @param stageCompleted Index of the stage completed(indexed from 0)
     */
+    event ReviewerVoted(uint256 indexed projectId, uint256 stageCompleted, address indexed funder);
+
+    /**
+        @notice Event emitted when a stage is completed in a project
+        @param projectId Identifier of the project that progressed
+        @param stageCompleted Index of the stage completed(indexed from 0)
+    */
     event StageCompleted(uint256 indexed projectId, uint256 stageCompleted);
 
     /**
@@ -270,6 +277,8 @@ contract Seedifyuba is Ownable {
 
         require(project.stagesVotes[completedStage][msg.sender] != true, "User already voted");
         project.stagesVotes[completedStage][msg.sender] = true;
+
+        emit ReviewerVoted(projectId, completedStage, msg.sender);
 
         for (uint256 i = 0; i < project.reviewers.length; i++) {
             if (!project.stagesVotes[completedStage][project.reviewers[i]]) return;
