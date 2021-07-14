@@ -1,12 +1,12 @@
 
 # PROD CONFIG
-FROM node:14.16.1
+FROM node:12-buster-slim
 
 WORKDIR /app
 
 COPY / ./
 
-RUN npm install
+RUN npm install --production
 
 
-CMD npx hardhat node --port $PORT
+CMD npx hardhat node --port $PORT --hostname "0.0.0.0"
