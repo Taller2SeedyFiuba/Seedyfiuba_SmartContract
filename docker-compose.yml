@@ -1,0 +1,16 @@
+version: "3"
+services:
+    project-service:
+        build: ./
+        volumes:
+          - ./:/app/src
+        container_name: smc-service
+        restart: always
+        env_file:
+            - .env
+        networks:
+            - my-net
+networks:
+  my-net:
+    external:
+      name: my-net
